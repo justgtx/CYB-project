@@ -14,5 +14,6 @@ cyb class
 **Test Scripts (Scapy-generated traffic):**
 - icmp_test.py : Sends ICMP test packets to loopback (echo request, echo reply, destination unreachable, time exceeded, large payload)
 - udp_test.py : Sends UDP test packets to loopback (basic, different ports, no payload, DNS port 53, large payload)
+- tcp_test.py : Sends TCP test packets to loopback (basic SYN, SYN with different ports, ACK, SYN+ACK, ACK with payload, SYN with large payload)
 - NOTE: each test file has a run() function that main.py will call once the sniffer is listening/completed. Each test can also be run by itself. 
 
