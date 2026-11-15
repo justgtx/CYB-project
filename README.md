@@ -7,7 +7,7 @@ cyb class
 -   NOTE: add offline (pcap) mode initially, and then develop it for active network sniffing.
 - dissector.py : Parse raw bytes and layers into clean data objects
 - reassembler.py : Stateful TCP stream tracking, sequence ordering, payload extraction
-- logger.py : Console formatting, live alerts, and .pcap / database output
+- logger.py : Console formatting, live alerts, and .pcap
 
 <br>
 
