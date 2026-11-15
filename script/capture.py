@@ -7,7 +7,7 @@ import os
 
 logging.basicConfig(
     level = logging.INFO,
-    format="%(asctime)s [%l(evelnames)s %(message)s]",
+    format="%(asctime)s [%(levelname)s %(message)s]",
     datefmt="%H:%M:%S"
 )
 
@@ -60,4 +60,5 @@ class PacketSniffer:
                 prn = packet_callback,
                 count = packet_count,
                 store = False,
+                promisc=self.promiscuous
             )
