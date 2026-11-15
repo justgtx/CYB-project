@@ -8,29 +8,52 @@ Tests TCP SYN and ACK flags, different ports, and payload sizes.
 from scapy.all import *
 import time
 
-#Test Case 1: 
+#Test Case 1: basic TCP SYN packet
+tcp_syn = (
+  IP(dst = "127.0.0.1")
+  / TCP(sport=4000, dport=9999, flags="S")
+)
 
+#Test Case 2: TCP SYN with different ports
+tcp_syn_ports = (
+    IP(dst="127.0.0.1")
+    / TCP(sport=5000, dport=8888, flags="S")
+)
 
+#Test Case 3: TCP ACK packet
+tcp_ack = (
+    IP(dst="127.0.0.1")
+    / TCP(sport=4001, dport=9999, flags="A", seq=100, ack=101)
+)
 
-#Test Case 2:
+#Test Case 4: TCP SYN+ACK packet
+tcp_syn_ack = (
+    IP(dst="127.0.0.1")
+    / TCP(sport=9999, dport=4000, flags="SA", seq=200, ack=101)
+)
 
+#Test Case 5: TCP ACK with payload
+tcp_ack_payload = (
+    IP(dst="127.0.0.1")
+    / TCP(sport=4002, dport=9999, flags="A", seq=300, ack=101)
+    / Raw(load=b"AMANDA_AVY_GIO_JACKSON_TCP_TESTING")
+)
 
+#Test Case 6: TCP SYN with larger payload
+tcp_syn_large_payload = (
+    IP(dst="127.0.0.1")
+    / TCP(sport=4003, dport=9999, flags="S")
+    / Raw(load=b"Z" * 1000)
+)
 
-#Test Case 3:
-
-
-
-#Test Case 4:
-
-
-
-#Test Case 5:
-
-
-
-#Test Case 6:
-
-
+tcp_packets = [
+  tcp_syn,
+  tcp_syn_ports,
+  tcp_ack,
+  tcp_syn_ack,
+  tcp_ack_payload,
+  tcp_syn_large_payload, 
+]
 
 def run():
   # main.py will call this method after the sniffer is started
