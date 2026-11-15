@@ -62,3 +62,17 @@ class PacketSniffer:
                 store = False,
                 promisc=self.promiscuous
             )
+            
+if __name__ == "__main__":
+    # Quick standalone verification when running `python capture.py` directly
+    from scapy.all import Ether, IP, TCP, wrpcap
+
+    demo_pcap = "demo_test.pcap"
+    wrpcap(demo_pcap, [Ether() / IP(src="10.0.0.1", dst="10.0.0.2") / TCP(dport=80)])
+
+    try:
+        sniffer = PacketSniffer(pcap_file=demo_pcap, bpf_filter="tcp")
+        sniffer.start(packet_callback=lambda pkt: logger.info(f"Packet received -> {pkt.summary()}"))
+    finally:
+        if os.path.exists(demo_pcap):
+            os.remove(demo_pcap)
