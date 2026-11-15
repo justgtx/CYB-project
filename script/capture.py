@@ -3,6 +3,7 @@ import logging
 from typing import Callable, Optional
 from scapy.all import sniff, get_if_list, conf
 from scapy.packet import Packet
+import os
 
 logging.basicConfig(
     level = logging.INFO,
@@ -17,15 +18,21 @@ class PacketSniffer:
     
     def __init__(
         self,
-        interface:Optional[str] = None,
+        interface: Optional[str] = None,
+        pcap_file: Optional[str] = None,
         bpf_filter: str = "",
         promiscuous: bool = True
     ):
         self.interface = interface or str(conf.iface)
         self.bpfilter = bpf_filter
         self.promiscuous = promiscuous
+        self.pcap_file = pcap_file
         
-        self._validate_interface()
+        if self.pcap_file:
+            if not os.path.exists(self.pcap_file):
+                raise FileNotFoundError(f"PCAP file '{self.pcap_file}' does not exist.")
+        else:
+            self._validate_interface()
     def _validate_interface(self) -> None:
         #basically ensures that the required NIC is on the system
         available = get_if_list()
@@ -35,7 +42,22 @@ class PacketSniffer:
                 f"Available interfaces: {', '.join(available)}"
             )
     
-    @staticmethod
-    def list_interfaces() -> list[str]:
-        #Returns a list of all available network interfaces
-        return get_if_list()
+    def start(self, packet_callback: Callable[[Packet],None],packet_count:int=0) -> None:
+        if self.pcap_file:
+            #offline mode, no need to put NIC in promiscuous mode and scan.
+            sniff(
+                offline = self.pcap_file,
+                filter = self.bpfilter if self.bpfilter else None,
+                prn = packet_callback,
+                count = packet_count,
+                store = False
+            )
+        else:
+            #Live mode, put NIC in promiscuous mode and scan.
+            sniff(
+                iface = self.interface,
+                filter = self.bpfilter if self.bpfilter else None,
+                prn = packet_callback,
+                count = packet_count,
+                store = False,
+            )
