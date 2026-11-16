@@ -29,9 +29,9 @@ class PacketLogger:
             handler = logging.StreamHandler()
             formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s", datefmt="%H:%M:%S")
             
-        handler.setFormatter(formatter)
-        self._sys_logger.addHandler(handler)
-        self._sys_logger.setLevel(logging.INFO)
+            handler.setFormatter(formatter)
+            self._sys_logger.addHandler(handler)
+            self._sys_logger.setLevel(logging.INFO)
         
     def info(self, message: str) -> None:
         # logs operational status messages like start/stop
@@ -65,7 +65,7 @@ class PacketLogger:
         proto = self._detect_protocol(data)
         src, dst = self._extract_endpoints(data)
         details = self._extract_details(data, proto)
-        base = f"[{self.packet_count:04d}] {ts} | {proto:<5} | {src} -> {dst}"
+        base = f"[{self.packet_cnt:04d}] {ts} | {proto:<5} | {src} -> {dst}"
         return f"{base} | {details}" if details else base
     
     def _extract_endpoints(self, data: dict[str, Any]) -> tuple[str, str]:
@@ -127,3 +127,46 @@ class PacketLogger:
         if "eth" in data or "ethernet" in data:
             return "ETH"
         return "UNKNOWN"
+    
+    
+if __name__ == "__main__":
+    demo_logger = PacketLogger(log_dir="logs", json_filename="demo_logger.jsonl")
+    demo_logger.info("Starting standalone logger demo...")
+
+    sample_packets = [
+        {
+            "src_ip": "127.0.0.1",
+            "dst_ip": "127.0.0.1",
+            "protocol": "TCP",
+            "tcp": {"src_port": 4000, "dst_port": 9999, "flags": "S", "seq": 0},
+            "payload_len": 0,
+        },
+        {
+            "src_ip": "127.0.0.1",
+            "dst_ip": "127.0.0.1",
+            "protocol": "TCP",
+            "tcp": {"src_port": 4002, "dst_port": 9999, "flags": "A", "seq": 300},
+            "payload": "AMANDA_AVY_GIO_JACKSON_TCP_TESTING",
+            "payload_len": 34,
+        },
+        {
+            "src_ip": "127.0.0.1",
+            "dst_ip": "127.0.0.1",
+            "protocol": "UDP",
+            "udp": {"src_port": 4000, "dst_port": 9999},
+            "payload": "AMANDA_AVY_GIO_JACKSON_UDP_TESTING",
+            "payload_len": 34,
+        },
+        {
+            "src_ip": "192.168.1.10",
+            "dst_ip": "192.168.1.1",
+            "protocol": "ICMP",
+            "icmp": {"type": 8, "code": 0},
+            "payload_len": 32,
+        },
+    ]
+    for _ in range(1):
+        for pkt in sample_packets:
+            demo_logger.log_packet(pkt)
+
+    demo_logger.info(f"Demo complete. Output written to {demo_logger.log_path}")
