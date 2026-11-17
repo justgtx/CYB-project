@@ -1,40 +1,34 @@
 import socket
 import struct
-from dataclasses import dataclass, field
-# Data classes and structures for dissecting network packets and packages needed
+from dataclasses import dataclass
+from typing import Optional
 
-input_data: bytes = b"" # Raw input data for packet dissection
-eth0: int = 0 # Ethernet interface index
-src_ip: str = "" # Source IP address
-dst_ip: str = "" # Destination IP address - should come 
+@dataclass
+class IPv4Header:
+    version: int #4 bits
+    header_len: int     #4 bits       # header length in bytes
+    type_of_service:int #8 bits
+    total_length: int #16 bits
+    identification: int #16 bits
+    flags: int #3
+    fragment_offset: int #13 bits
+    ttl: int   #8 bits
+    protocol: int    #8bits   # 1=ICMP, 6=TCP, 17=UDP
+    checksum: int   #16 
+    src_ip: str #32 bits
+    dst_ip: str #32 bits
 
-@dataclass #based on ipv4 protocol
+@dataclass# handle for the optional part
 class Packet:
-    raw_data: bytes = field(default=b"")
-    src_ip: str = field(default="")
-    dst_ip: str = field(default="")
-    eth0: int = field(default=0)
+    raw_data: bytes
+    ip: Optional[IPv4Header] = None   # None for non-IP frames like ARP
 
-    def __post_init__(self):
-        self.raw_data = self.raw_data or input_data
-        self.src_ip = self.src_ip or src_ip
-        self.dst_ip = self.dst_ip or dst_ip
-        self.eth0 = self.eth0 or eth0
-@dataclass #based on ipv4 protocol
-class IP_Headers:
-    version: int = field(default=4)
-    ihl: int = field(default=5)
-    total_length: int = field(default=0)
-    identification: int = field(default=0)
-    flags: int = field(default=0)
-    fragment_offset: int = field(default=0)
-    ttl: int = field(default=64)
-    protocol: int = field(default=0)
-    header_checksum: int = field(default=0)
-    src_ip: str = field(default="")
-    dst_ip: str = field(default="")
-#pick between TCP,UDP, ICMP, ARP
-def Main():
-    input_data = b"" # Example input data for packet dissection
-    packet = Packet() 
-    ip_headers = IP_Headers()
+def parse_ipv4(data: bytes) -> IPv4Header:
+    if len(data) < 20:
+        raise ValueError("truncated IPv4 header")
+    (ver_ihl, tos, total, ident, flags_frag,
+     ttl, proto, csum, src, dst) = struct.unpack("!BBHHHBBH4s4s", data[:20])
+    return IPv4Header(ver_ihl >> 4, (ver_ihl & 0x0F) * 4, tos, total, ident,
+                      flags_frag >> 13, (flags_frag & 0x1FFF) * 8,
+                      ttl, proto, csum,
+                      socket.inet_ntoa(src), socket.inet_ntoa(dst))
