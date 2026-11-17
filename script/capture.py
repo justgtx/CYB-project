@@ -41,7 +41,7 @@ class PacketSniffer:
                 f"Interface '{self.interface}' not found. "
                 f"Available interfaces: {', '.join(available)}"
             )
-    
+    #packet writing 
     def start(self, packet_callback: Callable[[Packet],None],packet_count:int=0) -> None:
         if self.pcap_file:
             #offline mode, no need to put NIC in promiscuous mode and scan.

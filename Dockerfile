@@ -1,6 +1,10 @@
-FROM ubuntu:24.4
-RUN apt-get update && apt-get install -y \
+FROM kalilinux/kali-rolling
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
-    python3-pip \
     python3-scapy \
+    tcpdump \
     && rm -rf /var/lib/apt/lists/*
+WORKDIR /packet-sniffer
+COPY script/ /packet-sniffer/script/
+RUN chmod +x /packet-sniffer/script/Main.py
+CMD ["python3", "script/Main.py"]
