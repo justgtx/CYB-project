@@ -6,7 +6,7 @@ References:
 - https://www.iana.org/assignments/icmp-parameters
 """
 
-from scapy.all import *
+from scapy.all import IP, ICMP, Raw, send
 import time
 
 # Test Case 1: basic icmp packet
@@ -19,7 +19,7 @@ icmp_packet = (
 icmp_payload = (
     IP(dst="127.0.0.1")
     / ICMP(type=8, code=0, id=1234, seq=1)
-    / RAW(load=b"AMANDA_AVY_GIO_JACKSON_ICMP_TESTING")
+    / Raw(load=b"AMANDA_AVY_GIO_JACKSON_ICMP_TESTING")
 )
 
 # Test Case 3: echo reply

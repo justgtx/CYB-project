@@ -4,10 +4,9 @@ import time
 
 class PcapFileWriter:
     # Writes raw Ethernet frames to a .pcap file (openable in Wireshark/tcpdump).
-    #should also be able to view usin tshark
     # Named PcapFileWriter so it doesn't clash with Scapy's PcapWriter.
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path) -> None:
         self._f = open(path, "wb")
         # 24-byte global header: magic, v2.4, tz=0, sigfigs=0, snaplen=65535, linktype=1 (Ethernet)
         self._f.write(struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1))

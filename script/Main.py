@@ -70,7 +70,7 @@ def process_packet(pkt, logger: PacketLogger) -> None:
         print(logger.format_summary(data))
         
 def main() -> None:#scapy3 imports
-from scapy.all import AsyncSniffer, conf
+    from scapy.all import AsyncSniffer, conf
 conf.use_pcap = True   # use libpcap (from tcpdump): it drops the duplicate outgoing copy on loopback
 import argparse
 import time
