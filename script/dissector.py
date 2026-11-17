@@ -24,7 +24,7 @@ class Packet:
     ip: Optional[IPv4Header] = None   # None for non-IP frames like ARP
 
 def parse_ipv4(data: bytes) -> IPv4Header:
-    if len(data) < 20:
+    if len(data) < 20:# stops overflow error and limits the amount of data in each section
         raise ValueError("truncated IPv4 header")
     (ver_ihl, tos, total, ident, flags_frag,
      ttl, proto, csum, src, dst) = struct.unpack("!BBHHHBBH4s4s", data[:20])
