@@ -4,16 +4,19 @@ from dataclasses import asdict, is_dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from xml.sax import handler
+from dissector import Packet
+from pcap_write import PcapFileWriter
 
 class PacketLogger:
-    # Handles the console summary output and saving of packet data to a JSON file.
+    # Handles the console summary output and saving of packet data to a JSON file
+    # and (optionally) a .pcap file.
     # Uses parsed packet produced by dissector.py
     
     def __init__(
         self,
         log_dir: str = "logs",
         json_filename: str = "packet_log.json",
+        pcap_filename: str | None = None,
         enable_console: bool = True,
         enable_file: bool = True
     ) -> None:
@@ -21,8 +24,10 @@ class PacketLogger:
         self.enable_file = enable_file
         self.packet_cnt = 0
         self.log_path = Path(log_dir) / json_filename
-        if self.enable_file:
+        if self.enable_file or pcap_filename:
             self.log_path.parent.mkdir(parents=True, exist_ok=True)
+        self._pcap = PcapFileWriter(Path(log_dir) / pcap_filename) if pcap_filename else None
+        self.pcap_path = Path(log_dir) / pcap_filename if pcap_filename else None
             
         self._sys_logger = logging.getLogger("PacketLogger")
         if not self._sys_logger.hasHandlers():
@@ -39,8 +44,11 @@ class PacketLogger:
     def error(self, message: str) -> None:
         # log capture or parsing errors.
         self._sys_logger.error(message)
-    def log_packet(self, packet_data: Any) -> None:
+    def log_packet(self, packet_data: Any, raw: bytes | None = None) -> None:
         #prints a one-line summary of the packet to the console and saves the full packet data to a JSON file.
+        #raw = the original frame bytes; if given, it is also written to the .pcap file.
+        if raw is None and isinstance(packet_data, Packet):
+            raw = packet_data.raw_data
         self.packet_cnt += 1
         data = self._normalize(packet_data)
         
@@ -50,11 +58,21 @@ class PacketLogger:
             print(self._format_summary(data), flush=True)
         if self.enable_file:
             self._write_jsonl(data)
+        if self._pcap and raw:
+            self._pcap.write(raw)
+
+    def close(self) -> None:
+        #closes the pcap file; call once when capture is finished
+        if self._pcap:
+            self._pcap.close()
+            self._pcap = None
             
     def _normalize(self, packet_data:Any) -> dict[str, Any]:
         #converts dataclass instances from dissector.py into dicts
         if is_dataclass(packet_data) and not isinstance(packet_data, type):
-            return asdict(packet_data)
+            d = asdict(packet_data)
+            d.pop("raw_data", None)   # bytes aren't JSON serializable; the pcap file keeps them
+            return d
         if isinstance(packet_data, dict):
             return dict(packet_data)
         return {"raw_repr": repr(packet_data)}
@@ -74,12 +92,13 @@ class PacketLogger:
         arp_layer = data.get("arp") or {}
         eth_layer = data.get("eth") or data.get("ethernet") or {}
 
-        src_ip = ip_layer.get("src_ip") or arp_layer.get("src_ip") or "N/A"
-        dst_ip = ip_layer.get("dst_ip") or arp_layer.get("dst_ip") or "N/A"
+        src_ip = ip_layer.get("src_ip") or arp_layer.get("src_ip")
+        dst_ip = ip_layer.get("dst_ip") or arp_layer.get("dst_ip")
 
-        transport = data.get("transport") or "N/A"
-        src_port = data.get("src_port") or "N/A"
-        dst_port = data.get("dst_port") or "N/A"
+        # ports live inside the tcp / udp sub-dict (or at the top level)
+        transport = data.get("tcp") or data.get("udp") or {}
+        src_port = data.get("src_port") if data.get("src_port") is not None else transport.get("src_port")
+        dst_port = data.get("dst_port") if data.get("dst_port") is not None else transport.get("dst_port")
         
         if src_ip and dst_ip:
             src = f"{src_ip}:{src_port}" if src_port is not None else str(src_ip)
